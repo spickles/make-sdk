@@ -1176,8 +1176,40 @@ def preflight_device(cfg: Config, require_devmode: bool = False):
                 if mode != 'devmode':
                     print(f'ERROR: Device is not in SDK Developer Mode (current: {mode})')
                     print('  SDK operations require the device to be in dev mode.')
-                    print('  Enable it with: make-sdk devmode enable')
-                    sys.exit(1)
+                    print()
+                    # Offer to enable it if we have NCM credentials
+                    if cfg.ncm_api_id and cfg.ncm_api_key:
+                        enable = input('  Enable dev mode now? (yes/no): ').strip().lower()
+                        if enable in ('yes', 'y'):
+                            print()
+                            action_devmode(cfg, 'enable')
+                            # Give the router time to apply
+                            print('  Waiting for device to apply dev mode...')
+                            for _ in range(12):
+                                time.sleep(5)
+                                try:
+                                    check = requests.get(
+                                        f'{device_base_url(cfg)}/api/status/system/sdk',
+                                        auth=auth, verify=False, timeout=10
+                                    )
+                                    if check.status_code == HTTPStatus.OK:
+                                        check_data = check.json().get('data', {})
+                                        check_mode = check_data.get('mode', '') if isinstance(check_data, dict) else ''
+                                        if check_mode == 'devmode':
+                                            print('  Device is now in dev mode. Continuing...')
+                                            print()
+                                            return
+                                except Exception:
+                                    pass
+                            print('  WARNING: Dev mode not confirmed after 60s. Proceeding anyway...')
+                            print()
+                            return
+                        else:
+                            sys.exit(1)
+                    else:
+                        print('  Enable it with: make-sdk devmode enable')
+                        print('  (Requires NCM API credentials)')
+                        sys.exit(1)
         except Exception:
             # If we can't check, proceed anyway — the operation itself will fail
             # with a more specific error if devmode is actually the problem
