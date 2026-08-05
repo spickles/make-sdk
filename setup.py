@@ -200,9 +200,23 @@ def setup_path_windows():
 
 
 def main():
-    print('=' * 60)
-    print('  make.py v2.0 — Cradlepoint NCOS SDK Tool Setup')
-    print('=' * 60)
+    print(r"""
+   ___                         ___ _      _
+  / __|_  _ _ __  ___ _ _     | _ (_)___ | |
+  \__ \ || | '_ \/ -_) '_|    |  _/ / -_)|_|
+  |___/\_,_| .__/\___|_|      |_| |_\___(_)
+            |_|
+  +----------------------------------------------------+
+  |  make-sdk v2.0 - Cradlepoint NCOS SDK Tool         |
+  +----------------------------------------------------+
+  |  Author:  Scott Pickles                            |
+  |  Email:   scott.pickles@ericsson.com               |
+  |  License: MIT                                      |
+  |                                                    |
+  |  Copyright (c) 2026 Scott Pickles.                 |
+  |  All rights reserved.                              |
+  +----------------------------------------------------+
+    """)
     print()
 
     args = sys.argv[1:]
