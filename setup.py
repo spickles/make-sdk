@@ -207,7 +207,7 @@ def main():
   |___/\_,_| .__/\___|_|      |_| |_\___(_)
             |_|
   +----------------------------------------------------+
-  |  make-sdk v1.0.0 - Cradlepoint NCOS SDK Tool         |
+  |  make-sdk v1.0.0 - Cradlepoint NCOS SDK Tool       |
   +----------------------------------------------------+
   |  Author:  Scott Pickles                            |
   |  Email:   scott.pickles@ericsson.com               |
