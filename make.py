@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-make.py — Cradlepoint NCOS SDK Tool (v2.0)
+make.py — Cradlepoint NCOS SDK Tool (v1.0.0)
 
 Single-file, OS-agnostic replacement for the original make.py. Pure Python —
 no shell-outs, no pscp.exe, no sshpass, no platform branching.

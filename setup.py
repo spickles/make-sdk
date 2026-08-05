@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-setup.py — Install make.py v2.0 (Cradlepoint NCOS SDK Tool)
+setup.py — Install make.py v1.0.0 (Cradlepoint NCOS SDK Tool)
 
 What this does:
   1. Installs Python dependencies (paramiko, requests)
@@ -97,7 +97,7 @@ def setup_path_unix():
     target_dir.mkdir(parents=True, exist_ok=True)
     wrapper_path = target_dir / COMMAND_NAME
     wrapper_content = f'''#!/usr/bin/env python3
-"""Wrapper for make.py v2.0 — installed by setup.py"""
+"""Wrapper for make.py v1.0.0 — installed by setup.py"""
 import sys
 import runpy
 sys.argv[0] = "{COMMAND_NAME}"
@@ -207,7 +207,7 @@ def main():
   |___/\_,_| .__/\___|_|      |_| |_\___(_)
             |_|
   +----------------------------------------------------+
-  |  make-sdk v2.0 - Cradlepoint NCOS SDK Tool         |
+  |  make-sdk v1.0.0 - Cradlepoint NCOS SDK Tool         |
   +----------------------------------------------------+
   |  Author:  Scott Pickles                            |
   |  Email:   scott.pickles@ericsson.com               |

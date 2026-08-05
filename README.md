@@ -1,4 +1,4 @@
-# make.py v2.0 — Cradlepoint NCOS SDK Tool
+# make.py v1.0.0 — Cradlepoint NCOS SDK Tool
 
 Single-file, OS-agnostic replacement for the original `make.py`. Pure Python — no
 shell-outs, no `pscp.exe`, no `sshpass`, no platform branching. Works identically on
@@ -375,7 +375,7 @@ The router typically takes 30-60 seconds to apply the change after the API call.
 
 ## Differences from Original make.py
 
-| Feature | Original | v2.0 |
+| Feature | Original | v1.0.0 |
 |---|---|---|
 | Upload | `sshpass`/`scp` (POSIX) or `pscp.exe` (Windows) | Pure paramiko — OS-agnostic |
 | Ports | Hardcoded 443/22 | Configurable via settings |
