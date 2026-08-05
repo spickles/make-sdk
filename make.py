@@ -1108,6 +1108,83 @@ def _tail_app_logs(cfg: Config, app_name: str, duration: int = 15):
 
 
 # =============================================================================
+# Pre-flight Checks
+# =============================================================================
+
+def preflight_device(cfg: Config, require_devmode: bool = False):
+    """Silent pre-flight check before any device operation.
+
+    Validates connectivity and auth BEFORE the actual operation starts, so the
+    user gets a clear root-cause message instead of a cryptic downstream error.
+
+    Args:
+        cfg: Config with device credentials
+        require_devmode: If True, also check that the device is in dev mode
+    """
+    if not cfg.dev_client_ip:
+        print('ERROR: No device IP configured.')
+        print('  Set dev_client_ip in sdk_settings.ini')
+        sys.exit(1)
+
+    # 1. Can we reach the device over HTTPS?
+    if not requests:
+        print('ERROR: requests module not installed (pip install requests)')
+        sys.exit(1)
+
+    url = f'{device_base_url(cfg)}/api/status/product_info'
+    try:
+        resp = requests.get(
+            url,
+            auth=requests.auth.HTTPBasicAuth(cfg.dev_client_username, cfg.dev_client_password),
+            verify=False, timeout=10
+        )
+    except requests.exceptions.ConnectionError:
+        print(f'ERROR: Cannot reach device at {cfg.dev_client_ip}:{cfg.https_port}')
+        print('  Check that the device is powered on and reachable from this machine.')
+        if cfg.https_port != DEFAULT_HTTPS_PORT:
+            print(f'  Note: Using non-standard HTTPS port {cfg.https_port}')
+        sys.exit(1)
+    except requests.exceptions.Timeout:
+        print(f'ERROR: Connection to {cfg.dev_client_ip}:{cfg.https_port} timed out')
+        print('  The device may be unreachable or the port may be wrong.')
+        sys.exit(1)
+    except requests.exceptions.RequestException as ex:
+        print(f'ERROR: Connection failed: {ex}')
+        sys.exit(1)
+
+    # 2. Are the credentials valid?
+    if resp.status_code == HTTPStatus.UNAUTHORIZED:
+        print('ERROR: Authentication failed.')
+        print(f'  Username "{cfg.dev_client_username}" was rejected by {cfg.dev_client_ip}')
+        print('  Check dev_client_username and dev_client_password in sdk_settings.ini')
+        sys.exit(1)
+    elif resp.status_code != HTTPStatus.OK:
+        print(f'ERROR: Unexpected response from device (HTTP {resp.status_code})')
+        sys.exit(1)
+
+    # 3. Is the device in dev mode? (only checked when the operation requires it)
+    if require_devmode:
+        try:
+            auth = requests.auth.HTTPBasicAuth(cfg.dev_client_username, cfg.dev_client_password)
+            sdk_resp = requests.get(
+                f'{device_base_url(cfg)}/api/status/system/sdk',
+                auth=auth, verify=False, timeout=10
+            )
+            if sdk_resp.status_code == HTTPStatus.OK:
+                sdk_data = sdk_resp.json().get('data', {})
+                mode = sdk_data.get('mode', 'unknown') if isinstance(sdk_data, dict) else 'unknown'
+                if mode != 'devmode':
+                    print(f'ERROR: Device is not in SDK Developer Mode (current: {mode})')
+                    print('  SDK operations require the device to be in dev mode.')
+                    print('  Enable it with: make-sdk devmode enable')
+                    sys.exit(1)
+        except Exception:
+            # If we can't check, proceed anyway — the operation itself will fail
+            # with a more specific error if devmode is actually the problem
+            pass
+
+
+# =============================================================================
 # High-Level SDK Actions
 # =============================================================================
 
@@ -1122,6 +1199,7 @@ def action_build(cfg: Config, app_dir: str) -> str:
 
 def action_install(cfg: Config, app_dir: str):
     """Build if needed, then upload to device."""
+    preflight_device(cfg, require_devmode=True)
     app_dict = parse_package_ini(app_dir)
     version = f"{app_dict['version_major']}.{app_dict['version_minor']}.{app_dict['version_patch']}"
     archive_name = f"{app_dict['name']} v{version}.tar.gz"
@@ -1143,6 +1221,7 @@ def action_install(cfg: Config, app_dir: str):
 
 
 def action_start(cfg: Config, app_dir: str):
+    preflight_device(cfg, require_devmode=True)
     app_dict = parse_package_ini(app_dir)
     app_uuid = ensure_uuid(app_dir, app_dict['name'])
     print(f'Starting {app_dict["name"]} on {cfg.dev_client_ip}')
@@ -1151,6 +1230,7 @@ def action_start(cfg: Config, app_dir: str):
 
 
 def action_stop(cfg: Config, app_dir: str):
+    preflight_device(cfg, require_devmode=True)
     app_dict = parse_package_ini(app_dir)
     app_uuid = ensure_uuid(app_dir, app_dict['name'])
     print(f'Stopping {app_dict["name"]} on {cfg.dev_client_ip}')
@@ -1159,6 +1239,7 @@ def action_stop(cfg: Config, app_dir: str):
 
 
 def action_uninstall(cfg: Config, app_dir: str):
+    preflight_device(cfg, require_devmode=True)
     app_dict = parse_package_ini(app_dir)
     app_uuid = ensure_uuid(app_dir, app_dict['name'])
     print(f'Uninstalling {app_dict["name"]} from {cfg.dev_client_ip}')
@@ -1167,6 +1248,7 @@ def action_uninstall(cfg: Config, app_dir: str):
 
 
 def action_purge(cfg: Config):
+    preflight_device(cfg, require_devmode=True)
     print(f'Purging all apps from {cfg.dev_client_ip}')
     url = f'{device_base_url(cfg)}/api/control/system/sdk/action'
     requests.put(
@@ -1181,6 +1263,7 @@ def action_purge(cfg: Config):
 
 def action_deploy(cfg: Config, app_dir: str):
     """Full redeploy: purge + build + install + verify running + tail logs."""
+    preflight_device(cfg, require_devmode=True)
     app_dict = parse_package_ini(app_dir)
     app_name = app_dict['name']
     print(f'Deploying {app_name} to {cfg.dev_client_ip}...')
@@ -1195,6 +1278,7 @@ def action_deploy(cfg: Config, app_dir: str):
 
 
 def action_status(cfg: Config):
+    preflight_device(cfg, require_devmode=False)
     print(f'SDK status for {cfg.dev_client_ip}:')
     status = device_get(cfg, '/status/system/sdk')
     if status:
