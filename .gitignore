@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+sdk_settings.ini
+.devmode_state.json
+bin/
